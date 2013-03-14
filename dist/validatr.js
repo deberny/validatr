@@ -38,7 +38,7 @@
 
 
         Support.inputtypes = (function(props) {
-            
+
             for ( var i = 0, bool, inputElemType, defaultView, len = props.length; i < len; i++ ) {
                 inputElem.setAttribute('type', inputElemType = props[i]);
                 bool = inputElem.type !== 'text';
@@ -73,10 +73,10 @@
             return inputs;
         })('search tel url email datetime date month week time datetime-local number range color'.split(' '));
 
-        (function(props) {        
+        (function(props) {
             for ( var i = 0, len = props.length; i < len; i++ ) {
                 testElem = inputElem;
-                
+
                 try {
                     testElem.setAttribute('type', props[i]);
                 } catch (e) {
@@ -141,7 +141,7 @@
                 index = -1,
                 length = isoSplit.length,
                 iso = [];
-       
+
             rule = new RegExp(rule);
             if (!rule.test(element.value)) {
                 return false;
@@ -150,7 +150,7 @@
             while (++index < length) {
                 iso[index] = dateSplit[ indexOf(split, isoSplit[index]) ];
             }
-            
+
             return parseISODate(iso.join('-'));
         }
 
@@ -225,14 +225,14 @@
                     } else if (max !== false) {
                         result = value <= max;
                         msg = $.validatr.messages.range.underflow;
-                    }  
+                    }
                 }
             }
 
             return {
                 valid: value !== false && result,
                 message: msg.replace('{{type}}', type).replace('{{min}}', minString).replace('{{max}}', maxString)
-            };    
+            };
         };
 
         return {
@@ -256,7 +256,7 @@
                     min = $element.attr('min') ? Format.parseISODate($element.attr('min')) : false,
                     max = $element.attr('max') ? Format.parseISODate($element.attr('max')) : false,
                     step = false;
-                
+
                 return minMax.call(element, value, min, max, step, 'date');
             },
 
@@ -291,7 +291,7 @@
                     min = rules.number.test( element.getAttribute('min') ) ? parseFloat( element.getAttribute('min') ) : false,
                     max = rules.number.test( element.getAttribute('max') ) ? parseFloat( element.getAttribute('max') ) : false,
                     step = rules.number.test( element.getAttribute('step') ) ? parseFloat( element.getAttribute('step') ) : element.getAttribute('step') === 'any' ? 'any' : false;
-                
+
                 if (step === false || step <= 0) {
                     step = 1;
                 }
@@ -390,9 +390,8 @@
 
     filters = {
         boxes: /checkbox|radio/i,
-        leftright: /left|right/i,
-        notInput: /select|textarea/i,
-        topbottom: /top|bottom/i
+        position: /left|right|top|bottom|none/i,
+        notInput: /select|textarea/i
     },
 
     keyCodes = [
@@ -504,7 +503,7 @@
 
         this.template = (function (options) {
             var template = $(options.template).addClass('validatr-message');
-            
+
             if (options.theme.length) {
                 template.addClass(theme[options.theme] || options.theme);
             } else {
@@ -540,7 +539,7 @@
 
         this.formElements.on({
             'focus.validatrelement': bindEvents,
-            'blur.validatrelement': unbindEvents 
+            'blur.validatrelement': unbindEvents
         });
 
         $('input[type=radio], input[type=checkbox]').on('click.validatrelement', function (e) {
@@ -561,19 +560,19 @@
         if (target.nodeName.toLowerCase() === 'select') {
             $target.on('change.validatrinput', function () {
                 setTimeout(function () {
-                    validateElement(target);                
+                    validateElement(target);
                 }, 1);
             });
         }
 
         $target.on({
             'blur.validatrinput': function () {
-                validateElement(target);                
+                validateElement(target);
             },
             'keyup.validatrinput': function (event) {
                 if (target.value.length && $.inArray(keyCodes, event.keyCode) === -1) {
                     validateElement(target);
-                }                
+                }
             }
         });
     }
@@ -604,7 +603,7 @@
         } else {
             if (required) {
                 check = Tests.required(element);
-            }   
+            }
 
             if (check.valid && element.value.length && !filters.boxes.test(type)) {
                 if (element.pattern) {
@@ -631,16 +630,16 @@
         if (check.valid) {
             $element.trigger('valid');
             return true;
-        } 
-        
+        }
+
         $.data(element, 'validationMessage', check.message);
         $element.trigger('invalid');
-        
+
         return false;
     }
 
     function validateForm (elements) {
-        var valid = true;        
+        var valid = true;
 
         elements.each(function (i, element) {
             if (!validateElement(element)) {
@@ -715,37 +714,49 @@
 
     function position(error, $target) {
         /*jshint validthis:true */
-        error.css('position', 'absolute');
+        if ( this.options.location !== 'none' ) {
+            error.css('position', 'absolute');
+        }
 
         var offset = $target.offset(),
             location = $target[0].getAttribute('data-location') || this.options.location;
 
-        if (filters.topbottom.test(location)) {
-            error.offset({left: offset.left});
+        if (filters.position.test(location)) {
 
-            if (location === 'top') {
-                error.offset({top: offset.top - error.outerHeight() - 2});
+            if (location === 'top' || location === 'bottom') {
+                error.offset({left: offset.left});
+
+                if (location === 'top') {
+                    error.offset({top: offset.top - error.outerHeight() - 2});
+                }
+
+                if (location === 'bottom') {
+                    error.offset({top: offset.top + error.outerHeight()});
+                }
             }
 
-            if (location === 'bottom') {
-                error.offset({top: offset.top + error.outerHeight()});
-            }            
-        } else if (filters.leftright.test(location)) {
-            error.offset({top: (offset.top + $target.outerHeight() / 2) - (error.outerHeight() / 2)});
+            if (location === 'left' || location === 'right') {
+                error.offset({top: (offset.top + $target.outerHeight() / 2) - (error.outerHeight() / 2)});
 
-            if (location === 'left') {
-                error.offset({left: offset.left - error.outerWidth() - 2});
+                if (location === 'left') {
+                    error.offset({left: offset.left - error.outerWidth() - 2});
+                }
+
+                if (location === 'right') {
+                    error.offset({left: offset.left + $target.outerWidth() + 2});
+                }
             }
 
-            if (location === 'right') {
-                error.offset({left: offset.left + $target.outerWidth() + 2});
-            }            
-        }        
+            if (location === 'none') {
+                console.log('no position');
+                //error.offset({top: offset.top + error.outerHeight()});
+            }
+        }
     }
 
     /*! Inspired by jQuery UI - v1.9.2 - 2012-12-04
      * http://jqueryui.com
-     * Copyright (c) 2012 jQuery Foundation and other contributors Licensed MIT 
+     * Copyright (c) 2012 jQuery Foundation and other contributors Licensed MIT
      */
     $.fn.validatr = function(options) {
         var isMethod = typeof options === 'string',
@@ -756,7 +767,7 @@
         if (isMethod) {
             this.each(function() {
                 var methodValue;
-                
+
                 instance = $.data(this, 'validatr');
                 if (!instance) {
                     throw new Error("cannot call methods on validatr prior to initialization; attempted to call method '" + options + "'" );
@@ -793,11 +804,12 @@
         showall: false,
         template: '<div>{{message}}</div>',
         theme: '',
-        valid: $.noop
+        valid: $.noop,
+        removeAllStyling: false
     };
 
     $.validatr = new Validatr();
-    
+
     $.validatr.messages = {
         checkbox: 'Please check this box if you want to proceed.',
         color: 'Please enter a color in the format #xxxxxx',
@@ -809,7 +821,7 @@
         radio: 'Please select one of these options.',
         range: {
             base: 'Please enter a {{type}}',
-            overflow: 'Please enter a {{type}} greater than or equal to {{min}}.', 
+            overflow: 'Please enter a {{type}} greater than or equal to {{min}}.',
             overUnder: 'Please enter a {{type}} greater than or equal to {{min}}<br> and less than or equal to {{max}}.',
             invalid: 'Invalid {{type}}',
             underflow: 'Please enter a {{type}} less than or equal to {{max}}.'
@@ -819,10 +831,10 @@
         time: 'Please enter a time in the format hh:mm:ss',
         url: 'Please enter a url.'
     };
-    
+
     $.validatr.debug = function () {
         /*global QUnit */
-        
+
         if (!QUnit) {
             throw new Error('QUnit is required for debugging');
         }
